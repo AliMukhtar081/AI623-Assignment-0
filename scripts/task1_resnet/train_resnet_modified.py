@@ -83,7 +83,6 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--exp", type=str, default="resnet152_modified_cifar10")
-    ap.add_argument("--disable_blocks", type=str, default="", help="Comma separated list of blocks to disable skip connections e.g. layer3.0,layer4.1")
     args = ap.parse_args()
 
     set_seed(args.seed)
@@ -98,41 +97,36 @@ def main():
     weights = ResNet152_Weights.DEFAULT
     model = resnet152(weights=weights)
 
-    # Disable skip connections
-    if args.disable_blocks:
-        blocks_to_disable = args.disable_blocks.split(",")
-        print(f"Disabling skip connections in: {blocks_to_disable}")
-        for block_name in blocks_to_disable:
-            try:
-                # Expecting format like 'layerX.Y'
-                parts = block_name.strip().split(".")
-                if len(parts) != 2:
-                     print(f"Skipping invalid block format: {block_name}")
-                     continue
-                
-                layer_name, idx_str = parts
-                if not hasattr(model, layer_name):
-                    print(f"Model does not have layer: {layer_name}")
-                    continue
+    # Hardcoded blocks to disable skip connections for Task 1a
+    # Disabling skip connection in one block of layer 3 and one of layer 4
+    blocks_to_disable = ["layer3.0", "layer4.1"]
+    print(f"Disabling skip connections in: {blocks_to_disable}")
+    
+    for block_name in blocks_to_disable:
+        try:
+            parts = block_name.strip().split(".")
+            layer_name, idx_str = parts
+            
+            if not hasattr(model, layer_name):
+                print(f"Model does not have layer: {layer_name}")
+                continue
 
-                layer_module = getattr(model, layer_name)
-                idx = int(idx_str)
-                
-                if idx >= len(layer_module):
-                    print(f"Index {idx} out of range for {layer_name} (len={len(layer_module)})")
-                    continue
+            layer_module = getattr(model, layer_name)
+            idx = int(idx_str)
+            
+            if idx >= len(layer_module):
+                print(f"Index {idx} out of range for {layer_name} (len={len(layer_module)})")
+                continue
 
-                block = layer_module[idx]
-                
-                # Monkey-patch the forward method
-                block.forward = types.MethodType(no_skip_forward, block)
-                print(f" - Disabled skip in {layer_name}[{idx}]")
-                
-            except Exception as e:
-                print(f"Error disabling block {block_name}: {e}")
-                sys.exit(1)
-    else:
-        print("No blocks disabled. Running standard ResNet structure (baseline equivalent).")
+            block = layer_module[idx]
+            
+            # Monkey-patch the forward method
+            block.forward = types.MethodType(no_skip_forward, block)
+            print(f" - Disabled skip in {layer_name}[{idx}]")
+            
+        except Exception as e:
+            print(f"Error disabling block {block_name}: {e}")
+            sys.exit(1)
 
     # Replace final layer: 1000 -> 10
     in_features = model.fc.in_features
@@ -160,7 +154,7 @@ def main():
     
     # Save information about modified blocks
     with open(run_dir / "modified_blocks.txt", "w") as f:
-        f.write(args.disable_blocks or "None")
+        f.write(",".join(blocks_to_disable))
 
     print("Starting training...")
     for epoch in range(1, args.epochs + 1):
