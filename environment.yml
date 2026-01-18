@@ -1,0 +1,24 @@
+name: ai623-dvlm
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - tqdm
+  - pillow
+  - pyyaml
+  - scipy
+  - pip:
+      - torch
+      - torchvision
+      - torchaudio
+      - umap-learn
+      - transformers
+      - timm
+      - opencv-python
