@@ -1,0 +1,20 @@
+{
+  "layer1.2": {
+    "intra_class_variance": 0.09056439250707626,
+    "inter_class_variance": 0.013496708124876022,
+    "separability_ratio": 0.14902885258197784,
+    "silhouette_score": -0.05657695233821869
+  },
+  "layer2.7": {
+    "intra_class_variance": 0.08431954681873322,
+    "inter_class_variance": 0.011072961613535881,
+    "separability_ratio": 0.13132141530513763,
+    "silhouette_score": -0.03358088806271553
+  },
+  "layer4.2": {
+    "intra_class_variance": 0.07599087804555893,
+    "inter_class_variance": 0.006127090193331242,
+    "separability_ratio": 0.08062928169965744,
+    "silhouette_score": 0.01169976219534874
+  }
+}

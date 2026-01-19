@@ -1,0 +1,77 @@
+================================================================================
+TRANSFER LEARNING COMPARISON REPORT
+================================================================================
+
+SUMMARY TABLE (sorted by best validation accuracy)
+--------------------------------------------------------------------------------
+Rank  Run Name                           Init        Mode           Best Val Acc   Final Val Acc  
+--------------------------------------------------------------------------------
+1     resnet152_pretrained_head_only_cifar100_2026-01-19_13-56-06Pretrained  head_only      0.7071 (E20)  0.7034
+2     resnet152_random_final_block_cifar100_2026-01-19_17-22-44Random      final_block    0.2338 (E20)  0.2329
+3     resnet152_random_final_block_cifar100_2026-01-19_16-39-45Random      final_block    0.2209 (E15)  0.2206
+4     resnet152_random_head_only_cifar100_2026-01-19_14-58-23Random      head_only      0.0423 (E30)  0.0423
+--------------------------------------------------------------------------------
+
+DETAILED ANALYSIS
+--------------------------------------------------------------------------------
+
+1. resnet152_pretrained_head_only_cifar100_2026-01-19_13-56-06
+   Initialization: Pretrained (ImageNet)
+   Training Mode: head_only
+   Total Parameters: 58,348,708
+   Trainable Parameters: 204,900 (0.35%)
+   Best Validation Accuracy: 0.7071 (Epoch 20)
+   Final Validation Accuracy: 0.7034
+   Final Training Accuracy: 0.7851
+   Total Epochs Trained: 30
+
+2. resnet152_random_final_block_cifar100_2026-01-19_17-22-44
+   Initialization: Random
+   Training Mode: final_block
+   Total Parameters: 58,348,708
+   Trainable Parameters: 15,169,636 (26.00%)
+   Best Validation Accuracy: 0.2338 (Epoch 20)
+   Final Validation Accuracy: 0.2329
+   Final Training Accuracy: 0.2460
+   Total Epochs Trained: 21
+
+3. resnet152_random_final_block_cifar100_2026-01-19_16-39-45
+   Initialization: Random
+   Training Mode: final_block
+   Total Parameters: 58,348,708
+   Trainable Parameters: 15,169,636 (26.00%)
+   Best Validation Accuracy: 0.2209 (Epoch 15)
+   Final Validation Accuracy: 0.2206
+   Final Training Accuracy: 0.2335
+   Total Epochs Trained: 18
+
+4. resnet152_random_head_only_cifar100_2026-01-19_14-58-23
+   Initialization: Random
+   Training Mode: head_only
+   Total Parameters: 58,348,708
+   Trainable Parameters: 204,900 (0.35%)
+   Best Validation Accuracy: 0.0423 (Epoch 30)
+   Final Validation Accuracy: 0.0423
+   Final Training Accuracy: 0.0412
+   Total Epochs Trained: 30
+
+================================================================================
+KEY FINDINGS
+================================================================================
+
+1. Pretrained vs Random Initialization:
+   - Average best val acc (Pretrained): 0.7071
+   - Average best val acc (Random): 0.1657
+   - Improvement from pretraining: 0.5414 (326.82%)
+
+2. Fine-tuning Strategy Comparison:
+   - head_only: avg val acc = 0.3747, avg trainable params = 204,900
+   - final_block: avg val acc = 0.2273, avg trainable params = 15,169,636
+
+3. Best Trade-off (Compute vs Accuracy):
+   - Most efficient: resnet152_pretrained_head_only_cifar100_2026-01-19_13-56-06
+     Val Acc: 0.7071
+     Trainable Params: 204,900
+     Efficiency Score: 3.4510 (acc per M params)
+
+================================================================================

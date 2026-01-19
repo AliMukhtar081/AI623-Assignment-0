@@ -66,3 +66,10 @@ Miniconda3-latest-Linux-x86_64.sh
 
 conventions.md 
 paper.tex
+
+/docs
+/scripts/task2
+/scripts/task3
+/scripts/task4
+
+/results
