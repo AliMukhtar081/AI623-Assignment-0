@@ -1,94 +1,80 @@
 
-import argparse
-import torch
-import torch.nn as nn
-from torchvision.models import resnet152, ResNet152_Weights
 import sys
 from pathlib import Path
 
-# Add project root to path
+import torch
+import torch.nn as nn
+from torchvision.models import resnet152, ResNet152_Weights
+
 sys.path.append(str(Path(__file__).parents[2]))
 
 from src.data.cifar100 import get_cifar100_loaders
 from src.utils.repro import set_seed
 from src.utils.logger import make_run_dir
-from src.utils.model_analysis import print_model_analysis
+from src.utils.model_analysis import get_model_summary
 from src.utils.train_utils import fit
+from src.utils.constants import NUM_CLASSES_CIFAR100, IMAGENET_IMAGE_SIZE
+from configs.task1_config import TRANSFER_PRETRAINED_HEAD_ONLY
 
 def main():
-    ap = argparse.ArgumentParser(description="Fine-tune ResNet-152 on CIFAR-100 with ImageNet-pretrained weights")
-    ap.add_argument("--epochs", type=int, default=50, help="Number of training epochs")
-    ap.add_argument("--batch_size", type=int, default=128, help="Batch size")
-    ap.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
-    ap.add_argument("--seed", type=int, default=42, help="Random seed")
-    ap.add_argument("--freeze_mode", type=str, default="head_only", 
-                    choices=["head_only", "final_block", "full"],
-                    help="What to train: head_only, final_block (layer4), or full backbone")
-    ap.add_argument("--exp", type=str, default=None, help="Experiment name (auto-generated if not provided)")
-    args = ap.parse_args()
-
-    if args.exp is None:
-        args.exp = f"resnet152_pretrained_{args.freeze_mode}_cifar100"
-
-    set_seed(args.seed)
+    cfg = TRANSFER_PRETRAINED_HEAD_ONLY
+    set_seed(cfg.seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
-    train_loader, val_loader = get_cifar100_loaders(batch_size=args.batch_size)
+    train_loader, val_loader = get_cifar100_loaders(batch_size=cfg.batch_size)
 
     weights = ResNet152_Weights.DEFAULT
     model = resnet152(weights=weights)
 
-    in_features = model.fc.in_features
-    model.fc = nn.Linear(in_features, 100)
+    num_features = model.fc.in_features
+    model.fc = nn.Linear(num_features, NUM_CLASSES_CIFAR100)
 
-    if args.freeze_mode == "head_only":
-        for name, p in model.named_parameters():
-            p.requires_grad = False
-        for p in model.fc.parameters():
-            p.requires_grad = True
+    if cfg.freeze_mode == "head_only":
+        for name, param in model.named_parameters():
+            param.requires_grad = False
+        for param in model.fc.parameters():
+            param.requires_grad = True
         trainable_params = model.fc.parameters()
         
-    elif args.freeze_mode == "final_block":
-        for name, p in model.named_parameters():
-            p.requires_grad = False
-        for p in model.layer4.parameters():
-            p.requires_grad = True
-        for p in model.fc.parameters():
-            p.requires_grad = True
+    elif cfg.freeze_mode == "final_block":
+        for name, param in model.named_parameters():
+            param.requires_grad = False
+        for param in model.layer4.parameters():
+            param.requires_grad = True
+        for param in model.fc.parameters():
+            param.requires_grad = True
         trainable_params = list(model.layer4.parameters()) + list(model.fc.parameters())
         
-    elif args.freeze_mode == "full":
-        for p in model.parameters():
-            p.requires_grad = True
+    elif cfg.freeze_mode == "full":
+        for param in model.parameters():
+            param.requires_grad = True
         trainable_params = model.parameters()
 
     model.to(device)
 
-    total_params = sum(p.numel() for p in model.parameters())
-    trainable_params_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    total_params = sum(param.numel() for param in model.parameters())
+    trainable_params_count = sum(param.numel() for param in model.parameters() if param.requires_grad)
 
-    optim = torch.optim.Adam(trainable_params, lr=args.lr)
+    optimizer = torch.optim.Adam(trainable_params, lr=cfg.lr)
 
-    from src.utils.model_analysis import get_model_summary
-    model_stats = get_model_summary(model, input_size=(1, 3, 224, 224), device=device)
+    model_stats = get_model_summary(model, input_size=(1, 3, IMAGENET_IMAGE_SIZE, IMAGENET_IMAGE_SIZE), device=device)
 
-    run_dir = make_run_dir("task1/transfer_learning", args.exp)
+    run_dir = make_run_dir("task1/transfer_learning", cfg.get_exp_name())
     
-    config = vars(args)
-    config.update({
-        "pretrained": True,
-        "total_params": total_params,
-        "trainable_params": trainable_params_count
-    })
+    config = {
+        "epochs": cfg.epochs, "batch_size": cfg.batch_size, "lr": cfg.lr, "seed": cfg.seed,
+        "freeze_mode": cfg.freeze_mode, "pretrained": cfg.pretrained,
+        "total_params": total_params, "trainable_params": trainable_params_count
+    }
     config.update(model_stats)
     
     fit(
         model=model,
         train_loader=train_loader,
         val_loader=val_loader,
-        optim=optim,
+        optimizer=optimizer,
         device=device,
-        epochs=args.epochs,
+        epochs=cfg.epochs,
         run_dir=run_dir,
         config=config,
         save_final_name="model_final.pt"

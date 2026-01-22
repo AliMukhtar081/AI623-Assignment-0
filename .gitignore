@@ -68,8 +68,18 @@ conventions.md
 paper.tex
 
 /docs
+
+/scripts/task4
+
 /scripts/task2
 /scripts/task3
-/scripts/task4
+
+/runs/task2
+/runs/task3
+/runs/task4
+
+figs/task2
+figs/task3
+figs/task4
 
 /results
